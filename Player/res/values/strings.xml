@@ -7,5 +7,6 @@
     <string name="status_paused">Status: Paused</string>
     <string name="button_play">Play</string>
     <string name="button_pause">Pause</string>
+    <string name="volume">Volume</string>
 
 </resources>

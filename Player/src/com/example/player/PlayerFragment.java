@@ -12,9 +12,12 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 
-public class PlayerFragment extends Fragment implements OnCompletionListener {
+public class PlayerFragment extends Fragment implements OnCompletionListener,
+		OnSeekBarChangeListener {
 	public static final String FRAGMENT_TAG = PlayerFragment.class
 			.getSimpleName();
 	private final String LOG_TAG = getClass().getSimpleName();
@@ -25,11 +28,14 @@ public class PlayerFragment extends Fragment implements OnCompletionListener {
 	TextView musicLabel;
 	String status;
 	String buttonStatus;
+	SeekBar volumeBar;
+	int progress = 100;
 
 	@Override
 	public void onStop() {
 		status = statusLabel.getText().toString();
 		buttonStatus = playerButton.getText().toString();
+		progress = volumeBar.getProgress();
 		super.onStop();
 	}
 
@@ -42,6 +48,10 @@ public class PlayerFragment extends Fragment implements OnCompletionListener {
 		musicLabel = (TextView) view.findViewById(R.id.music_label);
 		musicLabel.setText(Uri.parse(getString(R.raw.explosion))
 				.getLastPathSegment());
+		volumeBar = (SeekBar) view.findViewById(R.id.volume_bar);
+
+		volumeBar.setProgress(progress);
+		volumeBar.setOnSeekBarChangeListener(this);
 		playerButton.setText(buttonStatus);
 		statusLabel.setText(status);
 	}
@@ -58,10 +68,11 @@ public class PlayerFragment extends Fragment implements OnCompletionListener {
 		super.onCreate(savedInstanceState);
 		setRetainInstance(true);
 		player = new MediaPlayer();
-		player = MediaPlayer.create(getActivity(), R.raw.explosion);
+		player = MediaPlayer.create(getActivity(), R.raw.gorillaz);
 		player.setOnCompletionListener(this);
 		status = getString(R.string.status_idle);
 		buttonStatus = getString(R.string.button_play);
+		player.setVolume(100, 100);
 
 	}
 
@@ -102,16 +113,37 @@ public class PlayerFragment extends Fragment implements OnCompletionListener {
 	@Override
 	public void onCompletion(MediaPlayer mp) {
 		player.reset();
-		player = new MediaPlayer();
-		player = MediaPlayer.create(getActivity(), R.raw.explosion);
-		player.setOnCompletionListener(this);
-		playerButton.setText(getString(R.string.button_play));
-		playerButton.setOnClickListener(new PlayClick());
-		statusLabel.setText(getString(R.string.status_idle));
-		status = statusLabel.getText().toString();
-		buttonStatus = playerButton.getText().toString();
-		Log.d(LOG_TAG, "reset player " + player.getCurrentPosition() + "/"
-				+ player.getDuration());
+		if (getActivity() != null) {
+			player = new MediaPlayer();
+			player = MediaPlayer.create(getActivity(), R.raw.explosion);
+			player.setOnCompletionListener(this);
+			playerButton.setText(getString(R.string.button_play));
+			playerButton.setOnClickListener(new PlayClick());
+			statusLabel.setText(getString(R.string.status_idle));
+			status = statusLabel.getText().toString();
+			buttonStatus = playerButton.getText().toString();
+
+		}
+		Log.d(LOG_TAG, "reset player ");
+	}
+
+	@Override
+	public void onProgressChanged(SeekBar seekBar, int progress,
+			boolean fromUser) {
+		player.setVolume(progress, progress);
+		Log.d(LOG_TAG, "volume changed to " + progress);
+
+	}
+
+	@Override
+	public void onStartTrackingTouch(SeekBar seekBar) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void onStopTrackingTouch(SeekBar seekBar) {
+		// TODO Auto-generated method stub
 
 	}
 }
