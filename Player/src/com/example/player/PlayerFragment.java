@@ -29,7 +29,7 @@ public class PlayerFragment extends Fragment implements OnCompletionListener,
 	String status;
 	String buttonStatus;
 	SeekBar volumeBar;
-	int progress = 100;
+	float progress = 100;
 
 	@Override
 	public void onStop() {
@@ -50,7 +50,7 @@ public class PlayerFragment extends Fragment implements OnCompletionListener,
 				.getLastPathSegment());
 		volumeBar = (SeekBar) view.findViewById(R.id.volume_bar);
 
-		volumeBar.setProgress(progress);
+		volumeBar.setProgress((int)progress);
 		volumeBar.setOnSeekBarChangeListener(this);
 		playerButton.setText(buttonStatus);
 		statusLabel.setText(status);
@@ -130,7 +130,7 @@ public class PlayerFragment extends Fragment implements OnCompletionListener,
 	@Override
 	public void onProgressChanged(SeekBar seekBar, int progress,
 			boolean fromUser) {
-		player.setVolume(progress, progress);
+		player.setVolume((float)progress / 100, (float)progress / 100);
 		Log.d(LOG_TAG, "volume changed to " + progress);
 
 	}
