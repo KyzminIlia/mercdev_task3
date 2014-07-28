@@ -1,14 +1,27 @@
 package com.example.player;
 
+import android.content.ComponentName;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v4.app.FragmentActivity;
 
 public class PlayerActivity extends FragmentActivity {
+	MediaPlayerService mediaPlayerService;
+	PlayerFragment playerFragment;
+
+
+	@Override
+	protected void onDestroy() {		
+		super.onDestroy();
+	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		
 		super.onCreate(savedInstanceState);
-		PlayerFragment playerFragment = (PlayerFragment) getSupportFragmentManager()
+		playerFragment = (PlayerFragment) getSupportFragmentManager()
 				.findFragmentByTag(PlayerFragment.FRAGMENT_TAG);
 		if (playerFragment == null) {
 			playerFragment = new PlayerFragment();
@@ -17,6 +30,8 @@ public class PlayerActivity extends FragmentActivity {
 					.add(android.R.id.content, playerFragment,
 							PlayerFragment.FRAGMENT_TAG).commit();
 		}
+		
+
 	}
 
 	@Override

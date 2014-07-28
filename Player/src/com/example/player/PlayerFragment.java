@@ -1,11 +1,16 @@
 package com.example.player;
 
-import android.media.MediaPlayer;
-import android.media.MediaPlayer.OnCompletionListener;
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,27 +21,69 @@ import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 
-public class PlayerFragment extends Fragment implements OnCompletionListener,
-		OnSeekBarChangeListener {
+public class PlayerFragment extends Fragment implements OnSeekBarChangeListener {
 	public static final String FRAGMENT_TAG = PlayerFragment.class
 			.getSimpleName();
 	private final String LOG_TAG = getClass().getSimpleName();
-
+	public static final String ACTION_MUSIC_END = "com.example.player.MUSIC_END";
+	Intent mediaPlayerIntent;
+	private final String ACTION_START_SERVICE = "com.example.player.MediaPlayerService";
+	boolean serviceStarted = false;
 	Button playerButton;
 	TextView statusLabel;
-	MediaPlayer player;
 	TextView musicLabel;
 	String status;
 	String buttonStatus;
 	SeekBar volumeBar;
-	float progress = 100;
+	BroadcastReceiver serviceReciever;
+	MediaPlayerService mediaPlayerService;
+	boolean isPaused = false;
+
+	public void setService(MediaPlayerService mediaPlayerService) {
+		this.mediaPlayerService = mediaPlayerService;
+	}
+
+	@Override
+	public void onResume() {
+		boolean isRunning = false;
+		ActivityManager activityManager = (ActivityManager) getActivity()
+				.getSystemService(Context.ACTIVITY_SERVICE);
+		for (RunningServiceInfo service : activityManager
+				.getRunningServices(Integer.MAX_VALUE))
+			if (MediaPlayerService.class.getName().equals(
+					service.service.getClassName())) {
+				isRunning = true;
+			}
+		if (!isPaused)
+			if (isRunning) {
+				statusLabel.setText(getString(R.string.status_playing));
+				playerButton.setText(getString(R.string.button_pause));
+				playerButton.setOnClickListener(new PauseClick());
+				status = statusLabel.getText().toString();
+				buttonStatus = playerButton.getText().toString();
+			}
+
+		if (!serviceStarted) {
+			getActivity().startService(mediaPlayerIntent);
+			serviceStarted = true;
+		}
+		super.onResume();
+	}
 
 	@Override
 	public void onStop() {
 		status = statusLabel.getText().toString();
 		buttonStatus = playerButton.getText().toString();
-		progress = volumeBar.getProgress();
 		super.onStop();
+	}
+
+	@Override
+	public void onDestroy() {
+		LocalBroadcastManager
+				.getInstance(getActivity().getApplicationContext())
+				.unregisterReceiver(serviceReciever);
+		getActivity().stopService(mediaPlayerIntent);
+		super.onDestroy();
 	}
 
 	@Override
@@ -46,11 +93,10 @@ public class PlayerFragment extends Fragment implements OnCompletionListener,
 		statusLabel = (TextView) view.findViewById(R.id.status_label);
 		playerButton.setOnClickListener(new PlayClick());
 		musicLabel = (TextView) view.findViewById(R.id.music_label);
-		musicLabel.setText(Uri.parse(getString(R.raw.explosion))
+		musicLabel.setText(Uri.parse(getString(R.raw.gorillaz))
 				.getLastPathSegment());
 		volumeBar = (SeekBar) view.findViewById(R.id.volume_bar);
-
-		volumeBar.setProgress((int)progress);
+		volumeBar.setProgress(100);
 		volumeBar.setOnSeekBarChangeListener(this);
 		playerButton.setText(buttonStatus);
 		statusLabel.setText(status);
@@ -65,14 +111,35 @@ public class PlayerFragment extends Fragment implements OnCompletionListener,
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
+		mediaPlayerIntent = new Intent(ACTION_START_SERVICE);
 		super.onCreate(savedInstanceState);
 		setRetainInstance(true);
-		player = new MediaPlayer();
-		player = MediaPlayer.create(getActivity(), R.raw.gorillaz);
-		player.setOnCompletionListener(this);
 		status = getString(R.string.status_idle);
 		buttonStatus = getString(R.string.button_play);
-		player.setVolume(100, 100);
+		mediaPlayerService = new MediaPlayerService();
+		serviceReciever = new BroadcastReceiver() {
+
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				playerButton.setText(getString(R.string.button_play));
+				playerButton.setOnClickListener(new PlayClick());
+				statusLabel.setText(getString(R.string.status_idle));
+				status = statusLabel.getText().toString();
+				buttonStatus = playerButton.getText().toString();
+
+			}
+
+		};
+		LocalBroadcastManager
+				.getInstance(getActivity().getApplicationContext())
+				.registerReceiver(serviceReciever,
+						new IntentFilter(ACTION_MUSIC_END));
+
+	}
+
+	@Override
+	public void onStart() {
+		super.onStart();
 
 	}
 
@@ -80,14 +147,18 @@ public class PlayerFragment extends Fragment implements OnCompletionListener,
 
 		@Override
 		public void onClick(View v) {
-			Log.d(LOG_TAG, "start music on " + player.getCurrentPosition()
-					+ "/" + player.getDuration());
-			player.start();
+			Intent playIntent = new Intent(
+					mediaPlayerService.ACTION_PLAYER_CHANGE);
+			playIntent.putExtra(mediaPlayerService.EXTRA_PLAY, true);
+			LocalBroadcastManager.getInstance(
+					getActivity().getApplicationContext()).sendBroadcast(
+					playIntent);
 			statusLabel.setText(getString(R.string.status_playing));
 			playerButton.setText(getString(R.string.button_pause));
 			playerButton.setOnClickListener(new PauseClick());
 			status = statusLabel.getText().toString();
 			buttonStatus = playerButton.getText().toString();
+			isPaused = false;
 
 		}
 
@@ -97,40 +168,33 @@ public class PlayerFragment extends Fragment implements OnCompletionListener,
 
 		@Override
 		public void onClick(View v) {
-			Log.d(LOG_TAG, "pause music on " + player.getCurrentPosition()
-					+ "/" + player.getDuration());
-			player.pause();
+			Intent pauseIntent = new Intent(
+					mediaPlayerService.ACTION_PLAYER_CHANGE);
+			pauseIntent.putExtra(mediaPlayerService.EXTRA_PAUSE, true);
+			LocalBroadcastManager.getInstance(
+					getActivity().getApplicationContext()).sendBroadcast(
+					pauseIntent);
 			statusLabel.setText(getString(R.string.status_paused));
 			playerButton.setText(getString(R.string.button_play));
 			playerButton.setOnClickListener(new PlayClick());
 			status = statusLabel.getText().toString();
 			buttonStatus = playerButton.getText().toString();
+			isPaused = true;
 
 		}
-
-	}
-
-	@Override
-	public void onCompletion(MediaPlayer mp) {
-		player.reset();
-		if (getActivity() != null) {
-			player = new MediaPlayer();
-			player = MediaPlayer.create(getActivity(), R.raw.explosion);
-			player.setOnCompletionListener(this);
-			playerButton.setText(getString(R.string.button_play));
-			playerButton.setOnClickListener(new PlayClick());
-			statusLabel.setText(getString(R.string.status_idle));
-			status = statusLabel.getText().toString();
-			buttonStatus = playerButton.getText().toString();
-
-		}
-		Log.d(LOG_TAG, "reset player ");
 	}
 
 	@Override
 	public void onProgressChanged(SeekBar seekBar, int progress,
 			boolean fromUser) {
-		player.setVolume((float)progress / 100, (float)progress / 100);
+		Intent changeVolumeIntent = new Intent(
+				mediaPlayerService.ACTION_PLAYER_CHANGE);
+		changeVolumeIntent.putExtra(mediaPlayerService.ACTION_PLAYER_CHANGE,
+				true);
+		changeVolumeIntent.putExtra(mediaPlayerService.EXTRA_VOLUME, progress);
+		LocalBroadcastManager
+				.getInstance(getActivity().getApplicationContext())
+				.sendBroadcast(changeVolumeIntent);
 		Log.d(LOG_TAG, "volume changed to " + progress);
 
 	}
