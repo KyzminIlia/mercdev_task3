@@ -7,17 +7,19 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 public class MediaPlayerService extends Service implements OnCompletionListener {
 	MediaPlayer player;
 	float volume;
+	private final String LOG_TAG = MediaPlayerService.class.getSimpleName()
+			.toString();
 	PlayerBinder mediaPlayerBinder;
 	BroadcastReceiver playerReciever;
 	IntentFilter playerIntentFilter;
@@ -31,7 +33,7 @@ public class MediaPlayerService extends Service implements OnCompletionListener 
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		Intent intent = new Intent();
+		Intent intent = new Intent(this, PlayerActivity.class);
 		Notification notification = new Notification(R.drawable.ic_launcher,
 				"Player", System.currentTimeMillis());
 		notification.flags |= Notification.FLAG_AUTO_CANCEL;
@@ -51,9 +53,11 @@ public class MediaPlayerService extends Service implements OnCompletionListener 
 			public void onReceive(Context context, Intent intent) {
 				if (intent.getBooleanExtra(ACTION.PLAY.toString(), false)) {
 					player.start();
+					Log.d(LOG_TAG, "start player");
 				}
 				if (intent.getBooleanExtra(ACTION.PAUSE.toString(), false)) {
 					player.pause();
+					Log.d(LOG_TAG, "pause player");
 				}
 				if (intent.getBooleanExtra(ACTION.VOLUME_CHANGE.toString(),
 						false)) {

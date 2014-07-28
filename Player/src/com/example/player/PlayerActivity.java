@@ -46,6 +46,9 @@ public class PlayerActivity extends FragmentActivity {
 			playerFragment.changeVolume(audioManager
 					.getStreamVolume(AudioManager.STREAM_MUSIC));
 			break;
+		default:
+			return super.onKeyDown(keyCode, event);
+
 		}
 		return false;
 	}
