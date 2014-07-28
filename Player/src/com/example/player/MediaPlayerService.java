@@ -1,12 +1,16 @@
 package com.example.player;
 
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
@@ -17,31 +21,42 @@ public class MediaPlayerService extends Service implements OnCompletionListener 
 	PlayerBinder mediaPlayerBinder;
 	BroadcastReceiver playerReciever;
 	IntentFilter playerIntentFilter;
-	public final String ACTION_PLAYER_CHANGE = "com.example.player.PLAYER_CHANGE";
-	public final String EXTRA_PLAY = "com.example.player.PLAY";
-	public final String EXTRA_PAUSE = "com.example.player.PAUSE";
-	public final String EXTRA_VOLUME_CHANGE = "com.example.VOLUME_CHANGE";
-	public final String EXTRA_VOLUME = "com.example.VOLUME";
+	public final static String ACTION_PLAYER_CHANGE = "com.example.player.PLAYER_CHANGE";
+	public final static String EXTRA_VOLUME = "com.example.VOLUME";
+
+	public static enum ACTION {
+		PLAY, PAUSE, VOLUME_CHANGE
+	};
 
 	@Override
 	public void onCreate() {
 		super.onCreate();
+		Intent intent = new Intent();
+		Notification notification = new Notification(R.drawable.ic_launcher,
+				"Player", System.currentTimeMillis());
+		notification.flags |= Notification.FLAG_AUTO_CANCEL;
+		PendingIntent pendingIntent = PendingIntent.getActivity(
+				getApplicationContext(), 0, intent, 0);
+		notification.setLatestEventInfo(getApplicationContext(), "Now playing",
+				(Uri.parse(getString(R.raw.gorillaz)).getLastPathSegment()),
+				pendingIntent);
+		startForeground(17, notification);
 		player = new MediaPlayer();
 		player = MediaPlayer.create(this, R.raw.gorillaz);
 		player.setOnCompletionListener(this);
 		playerIntentFilter = new IntentFilter(ACTION_PLAYER_CHANGE);
-
 		playerReciever = new BroadcastReceiver() {
 
 			@Override
 			public void onReceive(Context context, Intent intent) {
-				if (intent.getBooleanExtra(EXTRA_PLAY, false)) {
+				if (intent.getBooleanExtra(ACTION.PLAY.toString(), false)) {
 					player.start();
 				}
-				if (intent.getBooleanExtra(EXTRA_PAUSE, false)) {
+				if (intent.getBooleanExtra(ACTION.PAUSE.toString(), false)) {
 					player.pause();
 				}
-				if (intent.getBooleanExtra(EXTRA_VOLUME_CHANGE, false)) {
+				if (intent.getBooleanExtra(ACTION.VOLUME_CHANGE.toString(),
+						false)) {
 					volume = intent.getIntExtra(EXTRA_VOLUME, 0);
 					player.setVolume((float) volume / 100, (float) volume / 100);
 				}

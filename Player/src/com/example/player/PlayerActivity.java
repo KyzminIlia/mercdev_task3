@@ -28,7 +28,7 @@ public class PlayerActivity extends FragmentActivity {
 			playerFragment = new PlayerFragment();
 			getSupportFragmentManager()
 					.beginTransaction()
-					.add(android.R.id.content, playerFragment,
+					.replace(android.R.id.content, playerFragment,
 							PlayerFragment.FRAGMENT_TAG).commit();
 		}
 
@@ -47,29 +47,7 @@ public class PlayerActivity extends FragmentActivity {
 					.getStreamVolume(AudioManager.STREAM_MUSIC));
 			break;
 		}
-		return super.onKeyDown(keyCode, event);
+		return false;
 	}
 
-	@Override
-	protected void onSaveInstanceState(Bundle outState) {
-		super.onSaveInstanceState(outState);
-		getSupportFragmentManager().putFragment(
-				outState,
-				PlayerFragment.FRAGMENT_TAG,
-				getSupportFragmentManager().findFragmentByTag(
-						PlayerFragment.FRAGMENT_TAG));
-	}
-
-	@Override
-	protected void onRestoreInstanceState(Bundle savedInstanceState) {
-		super.onRestoreInstanceState(savedInstanceState);
-		getSupportFragmentManager()
-				.beginTransaction()
-				.replace(
-						android.R.id.content,
-						getSupportFragmentManager()
-								.getFragment(savedInstanceState,
-										PlayerFragment.FRAGMENT_TAG),
-						PlayerFragment.FRAGMENT_TAG).commit();
-	}
 }

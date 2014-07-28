@@ -89,9 +89,9 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 		super.onDestroy();
 	}
 
-	public void changeVolume(int progress) {
-		volumeBar.setProgress(progress);
-		this.progress = progress;
+	public void changeVolume(int volume) {
+		volumeBar.setProgress(volume);
+		progress = volume;
 	}
 
 	@Override
@@ -165,7 +165,8 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 		public void onClick(View v) {
 			Intent playIntent = new Intent(
 					mediaPlayerService.ACTION_PLAYER_CHANGE);
-			playIntent.putExtra(mediaPlayerService.EXTRA_PLAY, true);
+			playIntent
+					.putExtra(MediaPlayerService.ACTION.PLAY.toString(), true);
 			LocalBroadcastManager.getInstance(
 					getActivity().getApplicationContext()).sendBroadcast(
 					playIntent);
@@ -186,7 +187,8 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 		public void onClick(View v) {
 			Intent pauseIntent = new Intent(
 					mediaPlayerService.ACTION_PLAYER_CHANGE);
-			pauseIntent.putExtra(mediaPlayerService.EXTRA_PAUSE, true);
+			pauseIntent.putExtra(MediaPlayerService.ACTION.PAUSE.toString(),
+					true);
 			LocalBroadcastManager.getInstance(
 					getActivity().getApplicationContext()).sendBroadcast(
 					pauseIntent);
@@ -205,9 +207,9 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 			boolean fromUser) {
 		Intent changeVolumeIntent = new Intent(
 				mediaPlayerService.ACTION_PLAYER_CHANGE);
-		changeVolumeIntent.putExtra(mediaPlayerService.EXTRA_VOLUME_CHANGE,
-				true);
-		changeVolumeIntent.putExtra(mediaPlayerService.EXTRA_VOLUME, progress);
+		changeVolumeIntent.putExtra(
+				MediaPlayerService.ACTION.VOLUME_CHANGE.toString(), true);
+		changeVolumeIntent.putExtra(MediaPlayerService.EXTRA_VOLUME, progress);
 		LocalBroadcastManager
 				.getInstance(getActivity().getApplicationContext())
 				.sendBroadcast(changeVolumeIntent);
