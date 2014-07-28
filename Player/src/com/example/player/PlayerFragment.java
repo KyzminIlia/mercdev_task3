@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -37,7 +38,8 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 	SeekBar volumeBar;
 	BroadcastReceiver serviceReciever;
 	MediaPlayerService mediaPlayerService;
-	boolean isPaused = false;
+	boolean isPaused = true;
+	int progress;
 
 	public void setService(MediaPlayerService mediaPlayerService) {
 		this.mediaPlayerService = mediaPlayerService;
@@ -74,6 +76,7 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 	public void onStop() {
 		status = statusLabel.getText().toString();
 		buttonStatus = playerButton.getText().toString();
+		progress = volumeBar.getProgress();
 		super.onStop();
 	}
 
@@ -86,9 +89,16 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 		super.onDestroy();
 	}
 
+	public void changeVolume(int progress) {
+		volumeBar.setProgress(progress);
+		this.progress = progress;
+	}
+
 	@Override
 	public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
+		AudioManager audioManager = (AudioManager) getActivity()
+				.getSystemService(getActivity().AUDIO_SERVICE);
 		playerButton = (Button) view.findViewById(R.id.player_button);
 		statusLabel = (TextView) view.findViewById(R.id.status_label);
 		playerButton.setOnClickListener(new PlayClick());
@@ -96,7 +106,9 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 		musicLabel.setText(Uri.parse(getString(R.raw.gorillaz))
 				.getLastPathSegment());
 		volumeBar = (SeekBar) view.findViewById(R.id.volume_bar);
-		volumeBar.setProgress(100);
+		volumeBar.setMax(audioManager
+				.getStreamMaxVolume(AudioManager.STREAM_MUSIC));
+		volumeBar.setProgress(progress);
 		volumeBar.setOnSeekBarChangeListener(this);
 		playerButton.setText(buttonStatus);
 		statusLabel.setText(status);
@@ -111,11 +123,15 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
+		AudioManager audioManager = (AudioManager) getActivity()
+				.getSystemService(getActivity().AUDIO_SERVICE);
+		getActivity().setVolumeControlStream(AudioManager.STREAM_MUSIC);
 		mediaPlayerIntent = new Intent(ACTION_START_SERVICE);
 		super.onCreate(savedInstanceState);
 		setRetainInstance(true);
 		status = getString(R.string.status_idle);
 		buttonStatus = getString(R.string.button_play);
+		progress = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 		mediaPlayerService = new MediaPlayerService();
 		serviceReciever = new BroadcastReceiver() {
 
@@ -189,7 +205,7 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 			boolean fromUser) {
 		Intent changeVolumeIntent = new Intent(
 				mediaPlayerService.ACTION_PLAYER_CHANGE);
-		changeVolumeIntent.putExtra(mediaPlayerService.ACTION_PLAYER_CHANGE,
+		changeVolumeIntent.putExtra(mediaPlayerService.EXTRA_VOLUME_CHANGE,
 				true);
 		changeVolumeIntent.putExtra(mediaPlayerService.EXTRA_VOLUME, progress);
 		LocalBroadcastManager
