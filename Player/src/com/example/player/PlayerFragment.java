@@ -54,6 +54,8 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 		boolean isRunning = false;
 		ActivityManager activityManager = (ActivityManager) getActivity()
 				.getSystemService(Context.ACTIVITY_SERVICE);
+		AudioManager audioManager = (AudioManager) getActivity()
+				.getSystemService(getActivity().AUDIO_SERVICE);
 		for (RunningServiceInfo service : activityManager
 				.getRunningServices(Integer.MAX_VALUE))
 			if (MediaPlayerService.class.getName().equals(
@@ -65,10 +67,14 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 			statusLabel.setText(getString(R.string.status_playing));
 			playerButton.setText(getString(R.string.button_pause));
 			playerButton.setOnClickListener(new PauseClick());
+			volumeBar.setProgress(audioManager
+					.getStreamVolume(AudioManager.STREAM_MUSIC));
 		} else {
 			statusLabel.setText(getString(R.string.status_paused));
 			playerButton.setText(getString(R.string.button_play));
 			playerButton.setOnClickListener(new PlayClick());
+			volumeBar.setProgress(audioManager
+					.getStreamVolume(AudioManager.STREAM_MUSIC));
 		}
 
 	}
@@ -94,9 +100,7 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 	}
 
 	public void changeVolume(int volume) {
-		volumeBar.setMax(volume);
-		if (volume >= volumeBar.getMax())
-			volumeBar.setProgress(volume);
+		volumeBar.setProgress(volume);
 		progress = volumeBar.getProgress();
 
 	}

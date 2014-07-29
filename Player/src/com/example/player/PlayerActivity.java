@@ -36,14 +36,14 @@ public class PlayerActivity extends FragmentActivity {
 		switch (keyCode) {
 		case KeyEvent.KEYCODE_VOLUME_UP:
 			audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
-					AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);
+					AudioManager.ADJUST_RAISE, AudioManager.FLAG_PLAY_SOUND);
 			playerFragment.changeVolume(audioManager
 					.getStreamVolume(AudioManager.STREAM_MUSIC));
 			return true;
 
 		case KeyEvent.KEYCODE_VOLUME_DOWN:
 			audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
-					AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);
+					AudioManager.ADJUST_LOWER, AudioManager.FLAG_PLAY_SOUND);
 
 			playerFragment.changeVolume(audioManager
 					.getStreamVolume(AudioManager.STREAM_MUSIC));
