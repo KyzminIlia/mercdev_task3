@@ -9,6 +9,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.net.Uri;
@@ -48,6 +49,10 @@ public class MediaPlayerService extends Service implements OnCompletionListener 
 		player = new MediaPlayer();
 		player = MediaPlayer.create(this, R.raw.gorillaz);
 		player.setOnCompletionListener(this);
+		AudioManager audioManager = (AudioManager) getApplicationContext()
+				.getSystemService(getApplicationContext().AUDIO_SERVICE);
+		int level = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+		player.setVolume((float) level / 100, (float) level / 100);
 		player.start();
 		playerIntentFilter = new IntentFilter(ACTION_PLAYER_CHANGE);
 		playerReciever = new BroadcastReceiver() {

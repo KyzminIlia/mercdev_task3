@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -29,6 +30,7 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 	public static final String ACTION_MUSIC_END = "com.example.player.MUSIC_END";
 	Intent mediaPlayerIntent;
 	private final String ACTION_START_SERVICE = "com.example.player.MediaPlayerService";
+	public static String PREFS_PAUSED = "com.example.player.PAUSED";
 	boolean serviceStarted = false;
 	Button playerButton;
 	TextView statusLabel;
@@ -58,11 +60,17 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 					service.service.getClassName())) {
 				isRunning = true;
 			}
-		if (isRunning) {
+
+		if (isRunning && !isPaused) {
 			statusLabel.setText(getString(R.string.status_playing));
 			playerButton.setText(getString(R.string.button_pause));
 			playerButton.setOnClickListener(new PauseClick());
+		} else {
+			statusLabel.setText(getString(R.string.status_paused));
+			playerButton.setText(getString(R.string.button_play));
+			playerButton.setOnClickListener(new PlayClick());
 		}
+
 	}
 
 	@Override
@@ -78,12 +86,19 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 		LocalBroadcastManager
 				.getInstance(getActivity().getApplicationContext())
 				.unregisterReceiver(serviceReciever);
+		SharedPreferences sharedPause = getActivity().getPreferences(0);
+		SharedPreferences.Editor sharedURLEditor = sharedPause.edit();
+		sharedURLEditor.putBoolean(PREFS_PAUSED, isPaused);
+		sharedURLEditor.commit();
 		super.onDestroy();
 	}
 
 	public void changeVolume(int volume) {
-		volumeBar.setProgress(volume);
-		progress = volume;
+		volumeBar.setMax(volume);
+		if (volume >= volumeBar.getMax())
+			volumeBar.setProgress(volume);
+		progress = volumeBar.getProgress();
+
 	}
 
 	@Override
@@ -117,6 +132,8 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 	public void onCreate(Bundle savedInstanceState) {
 		AudioManager audioManager = (AudioManager) getActivity()
 				.getSystemService(getActivity().AUDIO_SERVICE);
+		SharedPreferences sharedPause = getActivity().getPreferences(0);
+		isPaused = sharedPause.getBoolean(PREFS_PAUSED, false);
 		getActivity().setVolumeControlStream(AudioManager.STREAM_MUSIC);
 		mediaPlayerIntent = new Intent(getActivity(), MediaPlayerService.class);
 		super.onCreate(savedInstanceState);
@@ -214,6 +231,7 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 				.getInstance(getActivity().getApplicationContext())
 				.sendBroadcast(changeVolumeIntent);
 		Log.d(LOG_TAG, "volume changed to " + progress);
+		this.progress = progress;
 
 	}
 
