@@ -40,6 +40,7 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 	MediaPlayerService mediaPlayerService;
 	boolean isPaused = true;
 	int progress;
+	OnClickListener clickListener;
 
 	public void setService(MediaPlayerService mediaPlayerService) {
 		this.mediaPlayerService = mediaPlayerService;
@@ -47,6 +48,7 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 
 	@Override
 	public void onResume() {
+		super.onResume();
 		boolean isRunning = false;
 		ActivityManager activityManager = (ActivityManager) getActivity()
 				.getSystemService(Context.ACTIVITY_SERVICE);
@@ -56,16 +58,11 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 					service.service.getClassName())) {
 				isRunning = true;
 			}
-		if (!isPaused)
-			if (isRunning) {
-				statusLabel.setText(getString(R.string.status_playing));
-				playerButton.setText(getString(R.string.button_pause));
-				playerButton.setOnClickListener(new PauseClick());
-				status = statusLabel.getText().toString();
-				buttonStatus = playerButton.getText().toString();
-			}
-
-		super.onResume();
+		if (isRunning) {
+			statusLabel.setText(getString(R.string.status_playing));
+			playerButton.setText(getString(R.string.button_pause));
+			playerButton.setOnClickListener(new PauseClick());
+		}
 	}
 
 	@Override
@@ -81,8 +78,6 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 		LocalBroadcastManager
 				.getInstance(getActivity().getApplicationContext())
 				.unregisterReceiver(serviceReciever);
-		if (!isPaused)
-			getActivity().stopService(mediaPlayerIntent);
 		super.onDestroy();
 	}
 
@@ -123,13 +118,13 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 		AudioManager audioManager = (AudioManager) getActivity()
 				.getSystemService(getActivity().AUDIO_SERVICE);
 		getActivity().setVolumeControlStream(AudioManager.STREAM_MUSIC);
-		mediaPlayerIntent = new Intent(ACTION_START_SERVICE);
+		mediaPlayerIntent = new Intent(getActivity(), MediaPlayerService.class);
 		super.onCreate(savedInstanceState);
 		setRetainInstance(true);
 		status = getString(R.string.status_idle);
 		buttonStatus = getString(R.string.button_play);
 		progress = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-		mediaPlayerService = new MediaPlayerService();
+		clickListener = new PlayClick();
 		serviceReciever = new BroadcastReceiver() {
 
 			@Override
@@ -139,6 +134,8 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 				statusLabel.setText(getString(R.string.status_idle));
 				status = statusLabel.getText().toString();
 				buttonStatus = playerButton.getText().toString();
+				getActivity().stopService(mediaPlayerIntent);
+				serviceStarted = false;
 
 			}
 
@@ -161,10 +158,11 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 		@Override
 		public void onClick(View v) {
 			if (!serviceStarted) {
+
 				getActivity().startService(mediaPlayerIntent);
 				serviceStarted = true;
 			}
-
+			clickListener = this;
 			statusLabel.setText(getString(R.string.status_playing));
 			playerButton.setText(getString(R.string.button_pause));
 			playerButton.setOnClickListener(new PauseClick());
@@ -187,7 +185,7 @@ public class PlayerFragment extends Fragment implements OnSeekBarChangeListener 
 
 		@Override
 		public void onClick(View v) {
-
+			clickListener = this;
 			Intent pauseIntent = new Intent(
 					mediaPlayerService.ACTION_PLAYER_CHANGE);
 			pauseIntent.putExtra(MediaPlayerService.ACTION.PAUSE.toString(),

@@ -1,5 +1,7 @@
 package com.example.player;
 
+import java.io.IOException;
+
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -46,17 +48,22 @@ public class MediaPlayerService extends Service implements OnCompletionListener 
 		player = new MediaPlayer();
 		player = MediaPlayer.create(this, R.raw.gorillaz);
 		player.setOnCompletionListener(this);
+		player.start();
 		playerIntentFilter = new IntentFilter(ACTION_PLAYER_CHANGE);
 		playerReciever = new BroadcastReceiver() {
 
 			@Override
 			public void onReceive(Context context, Intent intent) {
 				if (intent.getBooleanExtra(ACTION.PLAY.toString(), false)) {
+
 					player.start();
 					Log.d(LOG_TAG, "start player");
 				}
 				if (intent.getBooleanExtra(ACTION.PAUSE.toString(), false)) {
-					player.pause();
+					if (player.isPlaying()) {
+						player.pause();
+					}
+
 					Log.d(LOG_TAG, "pause player");
 				}
 				if (intent.getBooleanExtra(ACTION.VOLUME_CHANGE.toString(),
@@ -67,13 +74,19 @@ public class MediaPlayerService extends Service implements OnCompletionListener 
 
 			}
 		};
+
+		if (playerReciever.isInitialStickyBroadcast()) {
+			Log.d(LOG_TAG, "sticky receiver");
+		}
 		LocalBroadcastManager.getInstance(getApplicationContext())
 				.registerReceiver(playerReciever, playerIntentFilter);
+
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		return super.onStartCommand(intent, flags, startId);
+		return START_NOT_STICKY;
+
 	}
 
 	@Override
@@ -89,6 +102,15 @@ public class MediaPlayerService extends Service implements OnCompletionListener 
 		player.setOnCompletionListener(this);
 		LocalBroadcastManager.getInstance(getApplicationContext())
 				.sendBroadcast(new Intent(PlayerFragment.ACTION_MUSIC_END));
+		try {
+			player.prepare();
+		} catch (IllegalStateException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@Override

@@ -1,11 +1,7 @@
 package com.example.player;
 
-import android.content.ComponentName;
-import android.content.Intent;
-import android.content.ServiceConnection;
 import android.media.AudioManager;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.support.v4.app.FragmentActivity;
 import android.view.KeyEvent;
 
@@ -40,11 +36,11 @@ public class PlayerActivity extends FragmentActivity {
 		switch (keyCode) {
 		case KeyEvent.KEYCODE_VOLUME_UP:
 			playerFragment.changeVolume(audioManager
-					.getStreamVolume(AudioManager.STREAM_MUSIC));
+					.getStreamVolume(AudioManager.STREAM_MUSIC) );
 			break;
 		case KeyEvent.KEYCODE_VOLUME_DOWN:
 			playerFragment.changeVolume(audioManager
-					.getStreamVolume(AudioManager.STREAM_MUSIC));
+					.getStreamVolume(AudioManager.STREAM_MUSIC) );
 			break;
 		default:
 			return super.onKeyDown(keyCode, event);
